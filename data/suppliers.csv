@@ -1,0 +1,7 @@
+supplier_id,name,country,region,on_time_rate,defect_rate,avg_lead_time_days,min_order_qty,payment_terms_days,supports_perishable
+SUP-001,GreenLeaf Goods,USA,North America,0.97,0.008,7,50,30,true
+SUP-002,Pacific Rim Trading,China,Asia,0.84,0.022,28,200,60,false
+SUP-003,Andes Outfitters,Peru,South America,0.91,0.015,35,100,45,false
+SUP-004,Heartland Bottling,USA,North America,0.95,0.010,14,75,30,true
+SUP-005,Saigon Knit Co,Vietnam,Asia,0.88,0.018,24,150,45,false
+SUP-006,Bavaria Paper Mills,Germany,Europe,0.98,0.005,18,30,30,false

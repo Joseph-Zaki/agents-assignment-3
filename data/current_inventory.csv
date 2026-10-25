@@ -1,0 +1,16 @@
+sku,name,on_hand,reorder_point,lead_time_days,unit_cost,holding_cost_per_unit_year,supplier_id
+SKU-001,Sunglasses,420,80,21,8.50,1.20,SUP-002
+SKU-002,Beach Towel,310,60,18,4.20,0.80,SUP-002
+SKU-003,Sunscreen SPF 50,180,75,14,3.10,0.60,SUP-001
+SKU-004,Swim Trunks,260,50,28,11.00,1.50,SUP-002
+SKU-005,Beach Chair,140,30,35,18.00,3.00,SUP-003
+SKU-006,Thermal Jacket,95,40,30,32.00,4.50,SUP-002
+SKU-007,Wool Gloves,18,80,30,6.50,0.90,SUP-002
+SKU-008,Knit Beanie,210,70,25,4.00,0.70,SUP-005
+SKU-009,Snow Boots,75,35,42,28.00,4.00,SUP-003
+SKU-010,Electric Blanket,120,50,28,22.00,3.20,SUP-002
+SKU-011,Stainless Bottle,330,120,21,5.50,0.90,SUP-004
+SKU-012,Bluetooth Buds,260,90,24,14.00,2.10,SUP-002
+SKU-013,Wired Earbuds,540,80,20,3.20,0.60,SUP-001
+SKU-014,Phone Case,410,100,18,2.10,0.40,SUP-001
+SKU-015,Notebook A5,380,90,12,1.80,0.35,SUP-006

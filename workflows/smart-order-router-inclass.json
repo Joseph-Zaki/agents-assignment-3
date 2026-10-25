@@ -1,0 +1,444 @@
+{
+  "id": "smart-order-router-v1",
+  "name": "Smart Order Router (In-Class)",
+  "nodes": [
+    {
+      "id": "c7821c7a-5d6b-5282-92ea-98b794be97a4",
+      "name": "Order Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        240,
+        380
+      ],
+      "webhookId": "0f66e7ab-fa3d-5d11-8014-0d447c907a8c",
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "smart-order-router",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "5dc751e2-fa51-5f89-b4b5-62e0083d46b9",
+      "name": "Normalize Order",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        380
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "/**\n * Normalize incoming order data and attach a mock warehouse inventory snapshot.\n *\n * In production the inventory snapshot would come from your WMS, your inventory\n * service, or a Postgres lookup. We hard-code it here so the in-class exercise\n * is fully self-contained \u2014 no DB to provision, no API to mock.\n *\n * Mutate the inventory object below to drive different scenarios:\n *   - Set a SKU to 0 in WAREHOUSE_A to force fallback routing.\n *   - Set a SKU to 0 in all three warehouses to force the manual-review path.\n */\nconst order = $json.body || $json;\n\n// Normalize / default missing fields so downstream nodes can rely on the shape.\nconst normalized = {\n  order_id:        order.order_id        || `ORD-${Date.now()}`,\n  customer_id:     order.customer_id     || \"CUST-UNKNOWN\",\n  customer_tier:   order.customer_tier   || \"regular\",\n  items:           order.items           || [],\n  shipping_method: order.shipping_method || \"standard\",\n  payment_method:  order.payment_method  || \"credit_card\",\n  order_value:     Number(order.order_value || 0),\n  total_quantity:  (order.items || []).reduce((acc, i) => acc + Number(i.quantity || 0), 0),\n};\n\n// Mock inventory: per-warehouse stock for each SKU.\nconst inventory = {\n  WAREHOUSE_A: { \"SKU-001\": 50,  \"SKU-002\": 0,   \"SKU-003\": 200 },  // Express hub\n  WAREHOUSE_B: { \"SKU-001\": 800, \"SKU-002\": 600, \"SKU-003\": 400 },  // Standard hub\n  WAREHOUSE_C: { \"SKU-001\": 200, \"SKU-002\": 1500,\"SKU-003\": 0   },  // Bulk hub\n};\n\nreturn [{ json: { order: normalized, inventory } }];\n"
+      }
+    },
+    {
+      "id": "0ba81b51-ed20-5c66-b348-afe56de618cc",
+      "name": "AI Order Classification",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        720,
+        380
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "anthropic-credential-placeholder",
+          "name": "Anthropic API Key"
+        }
+      },
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-sonnet-4-6\",\n  \"max_tokens\": 1024,\n  \"system\": \"You are an order routing assistant for an e-commerce platform.\\nYour job: classify each incoming order's priority so the workflow can route it\\nto the appropriate warehouse.\\n\\nClassification rules (apply in this order \\u2014 first match wins):\\n  1. URGENT  -- customer_tier == \\\"vip\\\"\\n              OR shipping_method matches /express|overnight|next-day/i\\n              OR order_value > 500\\n  2. BULK    -- customer_tier == \\\"wholesale\\\"\\n              OR total quantity across items > 50\\n  3. STANDARD -- everything else\\n\\nRespond with RAW JSON only (no markdown fences, no preamble). The downstream\\nCode node parses this with JSON.parse so any extra text breaks the workflow.\\n\\nRequired output shape:\\n{\\n  \\\"priority\\\": \\\"urgent\\\" | \\\"standard\\\" | \\\"bulk\\\",\\n  \\\"reasoning\\\": \\\"<one-sentence explanation citing the specific rule that fired>\\\",\\n  \\\"confidence\\\": <number between 0 and 1>\\n}\\n\",\n  \"messages\": [\n    { \"role\": \"user\", \"content\": {{ JSON.stringify('Order:\\n' + JSON.stringify($json.order, null, 2)) }} }\n  ]\n}",
+        "options": {}
+      }
+    },
+    {
+      "id": "84e07a1c-4486-5364-a017-3d5aa8b69b5b",
+      "name": "Parse Classification",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        960,
+        380
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "/**\n * Pull the classification JSON out of the Anthropic response envelope and\n * combine it with the original order/inventory so downstream nodes have\n * everything they need in $json.\n *\n * The Anthropic API returns: { content: [{ type: \"text\", text: \"...\" }], ... }\n * Our system prompt forbids markdown fences, so JSON.parse should succeed\n * directly. If it doesn't, the system prompt is what to debug.\n */\nconst raw = $json.content[0].text.trim();\nlet classification;\ntry {\n  classification = JSON.parse(raw);\n} catch (e) {\n  // n8n builds the error headline from line 1 only and splits it at every\n  // colon (a trailing one gives \"Unknown error\"), so line 1 stays colon-free.\n  throw new Error(\"Classifier did not return valid JSON. See the AI Order Classification output for the raw reply.\" +\n    \"\\nReply (first 500 chars):\\n\" + raw.slice(0, 500));\n}\n\n// Cross-node references pull the order + inventory back into scope.\nconst upstream = $('Normalize Order').first().json;\n\nreturn [{\n  json: {\n    order: upstream.order,\n    inventory: upstream.inventory,\n    priority:                classification.priority,\n    classification_reasoning: classification.reasoning,\n    classification_confidence: classification.confidence,\n  },\n}];\n"
+      }
+    },
+    {
+      "id": "d7270e39-06a9-5d55-9521-4b276ba1e385",
+      "name": "Route by Priority",
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.2,
+      "position": [
+        1200,
+        380
+      ],
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "urgent",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "urgent"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "standard",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "standard"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "typeValidation": "strict"
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{ $json.priority }}",
+                    "rightValue": "bulk",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "bulk"
+            }
+          ]
+        },
+        "options": {
+          "fallbackOutput": "extra"
+        }
+      }
+    },
+    {
+      "id": "2d1a6926-0c01-5e43-90d0-fc56b76b7efa",
+      "name": "Pick Warehouse A (Express)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        200
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "/**\n * Lane: express\n * Assigned warehouse: WAREHOUSE_A\n * Why: fastest carrier coverage, regional hub\n *\n * Each lane assigns its preferred warehouse and checks whether stock is\n * available for every SKU in the order. The downstream IF node routes\n * to the fulfillment path or the fallback-sourcing path based on the\n * `in_stock` boolean we set here.\n */\nconst j = $json;\nconst warehouse = \"WAREHOUSE_A\";\n\n// Check every line item against the assigned warehouse's stock.\nconst stock_per_item = j.order.items.map(item => {\n  const available = (j.inventory[warehouse] || {})[item.sku] || 0;\n  return { sku: item.sku, requested: item.quantity, available, ok: available >= item.quantity };\n});\nconst in_stock = stock_per_item.every(s => s.ok);\n\nreturn [{\n  json: {\n    ...j,\n    assigned_warehouse: warehouse,\n    lane: \"express\",\n    stock_per_item,\n    in_stock,\n  },\n}];\n"
+      }
+    },
+    {
+      "id": "9f90df63-060d-516b-befa-35bc2c10386e",
+      "name": "Pick Warehouse B (Standard)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        380
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "/**\n * Lane: standard\n * Assigned warehouse: WAREHOUSE_B\n * Why: balanced cost vs transit time\n *\n * Each lane assigns its preferred warehouse and checks whether stock is\n * available for every SKU in the order. The downstream IF node routes\n * to the fulfillment path or the fallback-sourcing path based on the\n * `in_stock` boolean we set here.\n */\nconst j = $json;\nconst warehouse = \"WAREHOUSE_B\";\n\n// Check every line item against the assigned warehouse's stock.\nconst stock_per_item = j.order.items.map(item => {\n  const available = (j.inventory[warehouse] || {})[item.sku] || 0;\n  return { sku: item.sku, requested: item.quantity, available, ok: available >= item.quantity };\n});\nconst in_stock = stock_per_item.every(s => s.ok);\n\nreturn [{\n  json: {\n    ...j,\n    assigned_warehouse: warehouse,\n    lane: \"standard\",\n    stock_per_item,\n    in_stock,\n  },\n}];\n"
+      }
+    },
+    {
+      "id": "1d935900-03b3-5745-be6a-45d1a82003d7",
+      "name": "Pick Warehouse C (Bulk)",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1440,
+        560
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "/**\n * Lane: bulk\n * Assigned warehouse: WAREHOUSE_C\n * Why: lowest per-unit cost, highest volume capacity\n *\n * Each lane assigns its preferred warehouse and checks whether stock is\n * available for every SKU in the order. The downstream IF node routes\n * to the fulfillment path or the fallback-sourcing path based on the\n * `in_stock` boolean we set here.\n */\nconst j = $json;\nconst warehouse = \"WAREHOUSE_C\";\n\n// Check every line item against the assigned warehouse's stock.\nconst stock_per_item = j.order.items.map(item => {\n  const available = (j.inventory[warehouse] || {})[item.sku] || 0;\n  return { sku: item.sku, requested: item.quantity, available, ok: available >= item.quantity };\n});\nconst in_stock = stock_per_item.every(s => s.ok);\n\nreturn [{\n  json: {\n    ...j,\n    assigned_warehouse: warehouse,\n    lane: \"bulk\",\n    stock_per_item,\n    in_stock,\n  },\n}];\n"
+      }
+    },
+    {
+      "id": "ceb94c89-a111-5bda-a71a-7b67cdb7fd82",
+      "name": "Stock Available?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1680,
+        380
+      ],
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "conditions": [
+            {
+              "leftValue": "={{ $json.in_stock }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      }
+    },
+    {
+      "id": "3a47ee07-3b0a-5b88-b279-37dd7236976b",
+      "name": "Alternative Sourcing",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1920,
+        560
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "/**\n * Out-of-stock fallback: scan the other warehouses for stock and route\n * the order there. If no warehouse has stock, escalate to manual review.\n *\n * In production this would also consider transfer cost, transit time,\n * and customer-facing SLA implications. We keep it simple here: first\n * warehouse with stock wins.\n */\nconst j = $json;\nconst candidates = [\"WAREHOUSE_A\", \"WAREHOUSE_B\", \"WAREHOUSE_C\"]\n  .filter(w => w !== j.assigned_warehouse);\n\nlet fallback = null;\nfor (const w of candidates) {\n  const ok = j.order.items.every(item => (j.inventory[w] || {})[item.sku] >= item.quantity);\n  if (ok) { fallback = w; break; }\n}\n\nreturn [{\n  json: {\n    ...j,\n    fallback_warehouse: fallback,\n    action: fallback ? \"fallback_routed\" : \"manual_review\",\n    fallback_reason: fallback\n      ? `Original warehouse ${j.assigned_warehouse} lacked stock; routed to ${fallback}.`\n      : `No warehouse has stock for all line items. Escalating to manual review.`,\n  },\n}];\n"
+      }
+    },
+    {
+      "id": "8a2e417d-7cd9-58b3-8da5-acd09ae6855a",
+      "name": "Mark Routed",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        1920,
+        200
+      ],
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "93943d47-1a64-5a28-ae0a-89b4e172e93b",
+              "name": "action",
+              "value": "routed_primary",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      }
+    },
+    {
+      "id": "be7dd548-d2b5-592b-b8b2-11ca854c9fa5",
+      "name": "Log Decision",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2160,
+        380
+      ],
+      "parameters": {
+        "language": "javaScript",
+        "jsCode": "/**\n * Audit log entry \u2014 records the routing decision and reasoning trace.\n *\n * In production this would write to a database or log shipper. Here we\n * just structure the log entry and pass it forward; the workflow's\n * webhook response is the audit record for now.\n */\nconst j = $json;\n\nconst log_entry = {\n  timestamp: new Date().toISOString(),\n  order_id: j.order.order_id,\n  customer_id: j.order.customer_id,\n  customer_tier: j.order.customer_tier,\n  priority: j.priority,\n  classification_reasoning: j.classification_reasoning,\n  classification_confidence: j.classification_confidence,\n  assigned_warehouse: j.assigned_warehouse,\n  fallback_warehouse: j.fallback_warehouse || null,\n  final_warehouse: j.fallback_warehouse || j.assigned_warehouse,\n  action: j.action,\n  in_stock_primary: j.in_stock,\n  stock_check: j.stock_per_item,\n};\n\nreturn [{ json: log_entry }];\n"
+      }
+    }
+  ],
+  "connections": {
+    "Order Webhook": {
+      "main": [
+        [
+          {
+            "node": "Normalize Order",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Normalize Order": {
+      "main": [
+        [
+          {
+            "node": "AI Order Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Order Classification": {
+      "main": [
+        [
+          {
+            "node": "Parse Classification",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Classification": {
+      "main": [
+        [
+          {
+            "node": "Route by Priority",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Route by Priority": {
+      "main": [
+        [
+          {
+            "node": "Pick Warehouse A (Express)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pick Warehouse B (Standard)",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Pick Warehouse C (Bulk)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Warehouse A (Express)": {
+      "main": [
+        [
+          {
+            "node": "Stock Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Warehouse B (Standard)": {
+      "main": [
+        [
+          {
+            "node": "Stock Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Pick Warehouse C (Bulk)": {
+      "main": [
+        [
+          {
+            "node": "Stock Available?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Stock Available?": {
+      "main": [
+        [
+          {
+            "node": "Mark Routed",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Alternative Sourcing",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Mark Routed": {
+      "main": [
+        [
+          {
+            "node": "Log Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Alternative Sourcing": {
+      "main": [
+        [
+          {
+            "node": "Log Decision",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

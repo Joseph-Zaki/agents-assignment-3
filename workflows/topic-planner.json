@@ -1,0 +1,131 @@
+{
+  "id": "topic-planner-claude-v1",
+  "name": "Topic Planner (Claude)",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "9b2f9a30-4a1c-4f4f-9a01-000000000001",
+      "name": "When clicking 'Test workflow'",
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [240, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1f1f1f1-0000-0000-0000-000000000001",
+              "name": "topic",
+              "value": "How does prompt caching work in the Anthropic API?",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9b2f9a30-4a1c-4f4f-9a01-000000000002",
+      "name": "Set Topic",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [460, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.anthropic.com/v1/messages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "x-api-key",
+              "value": "={{ $env.ANTHROPIC_API_KEY }}"
+            },
+            {
+              "name": "anthropic-version",
+              "value": "2023-06-01"
+            },
+            {
+              "name": "content-type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"model\": \"claude-haiku-4-5-20251001\",\n  \"max_tokens\": 1024,\n  \"system\": \"You are a research planner. Given a topic, reply with a numbered list of 3 concise, actionable research steps. No preamble.\",\n  \"messages\": [\n    { \"role\": \"user\", \"content\": {{ JSON.stringify($json.topic) }} }\n  ]\n}",
+        "options": {}
+      },
+      "id": "9b2f9a30-4a1c-4f4f-9a01-000000000003",
+      "name": "Anthropic Messages",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [680, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "f1f1f1f1-0000-0000-0000-000000000002",
+              "name": "topic",
+              "value": "={{ $('Set Topic').item.json.topic }}",
+              "type": "string"
+            },
+            {
+              "id": "f1f1f1f1-0000-0000-0000-000000000003",
+              "name": "plan",
+              "value": "={{ $json.content[0].text }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "9b2f9a30-4a1c-4f4f-9a01-000000000004",
+      "name": "Extract Plan",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [900, 300]
+    }
+  ],
+  "connections": {
+    "When clicking 'Test workflow'": {
+      "main": [
+        [
+          {
+            "node": "Set Topic",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Topic": {
+      "main": [
+        [
+          {
+            "node": "Anthropic Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Anthropic Messages": {
+      "main": [
+        [
+          {
+            "node": "Extract Plan",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "pinData": {}
+}

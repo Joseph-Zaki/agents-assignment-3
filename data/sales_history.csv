@@ -1,0 +1,181 @@
+month,sku,name,units_sold
+2025-01,SKU-001,Sunglasses,19
+2025-02,SKU-001,Sunglasses,23
+2025-03,SKU-001,Sunglasses,33
+2025-04,SKU-001,Sunglasses,46
+2025-05,SKU-001,Sunglasses,74
+2025-06,SKU-001,Sunglasses,112
+2025-07,SKU-001,Sunglasses,130
+2025-08,SKU-001,Sunglasses,121
+2025-09,SKU-001,Sunglasses,74
+2025-10,SKU-001,Sunglasses,46
+2025-11,SKU-001,Sunglasses,28
+2025-12,SKU-001,Sunglasses,23
+2025-01,SKU-002,Beach Towel,20
+2025-02,SKU-002,Beach Towel,25
+2025-03,SKU-002,Beach Towel,35
+2025-04,SKU-002,Beach Towel,50
+2025-05,SKU-002,Beach Towel,81
+2025-06,SKU-002,Beach Towel,121
+2025-07,SKU-002,Beach Towel,141
+2025-08,SKU-002,Beach Towel,131
+2025-09,SKU-002,Beach Towel,81
+2025-10,SKU-002,Beach Towel,50
+2025-11,SKU-002,Beach Towel,30
+2025-12,SKU-002,Beach Towel,25
+2025-01,SKU-003,Sunscreen SPF 50,22
+2025-02,SKU-003,Sunscreen SPF 50,27
+2025-03,SKU-003,Sunscreen SPF 50,38
+2025-04,SKU-003,Sunscreen SPF 50,54
+2025-05,SKU-003,Sunscreen SPF 50,87
+2025-06,SKU-003,Sunscreen SPF 50,131
+2025-07,SKU-003,Sunscreen SPF 50,153
+2025-08,SKU-003,Sunscreen SPF 50,142
+2025-09,SKU-003,Sunscreen SPF 50,87
+2025-10,SKU-003,Sunscreen SPF 50,54
+2025-11,SKU-003,Sunscreen SPF 50,33
+2025-12,SKU-003,Sunscreen SPF 50,27
+2025-01,SKU-004,Swim Trunks,23
+2025-02,SKU-004,Swim Trunks,29
+2025-03,SKU-004,Swim Trunks,41
+2025-04,SKU-004,Swim Trunks,58
+2025-05,SKU-004,Swim Trunks,94
+2025-06,SKU-004,Swim Trunks,140
+2025-07,SKU-004,Swim Trunks,164
+2025-08,SKU-004,Swim Trunks,152
+2025-09,SKU-004,Swim Trunks,94
+2025-10,SKU-004,Swim Trunks,58
+2025-11,SKU-004,Swim Trunks,35
+2025-12,SKU-004,Swim Trunks,29
+2025-01,SKU-005,Beach Chair,17
+2025-02,SKU-005,Beach Chair,21
+2025-03,SKU-005,Beach Chair,30
+2025-04,SKU-005,Beach Chair,42
+2025-05,SKU-005,Beach Chair,68
+2025-06,SKU-005,Beach Chair,102
+2025-07,SKU-005,Beach Chair,119
+2025-08,SKU-005,Beach Chair,110
+2025-09,SKU-005,Beach Chair,68
+2025-10,SKU-005,Beach Chair,42
+2025-11,SKU-005,Beach Chair,26
+2025-12,SKU-005,Beach Chair,21
+2025-01,SKU-006,Thermal Jacket,121
+2025-02,SKU-006,Thermal Jacket,102
+2025-03,SKU-006,Thermal Jacket,65
+2025-04,SKU-006,Thermal Jacket,37
+2025-05,SKU-006,Thermal Jacket,23
+2025-06,SKU-006,Thermal Jacket,19
+2025-07,SKU-006,Thermal Jacket,19
+2025-08,SKU-006,Thermal Jacket,23
+2025-09,SKU-006,Thermal Jacket,46
+2025-10,SKU-006,Thermal Jacket,84
+2025-11,SKU-006,Thermal Jacket,130
+2025-12,SKU-006,Thermal Jacket,149
+2025-01,SKU-007,Wool Gloves,131
+2025-02,SKU-007,Wool Gloves,111
+2025-03,SKU-007,Wool Gloves,71
+2025-04,SKU-007,Wool Gloves,40
+2025-05,SKU-007,Wool Gloves,25
+2025-06,SKU-007,Wool Gloves,20
+2025-07,SKU-007,Wool Gloves,20
+2025-08,SKU-007,Wool Gloves,25
+2025-09,SKU-007,Wool Gloves,100
+2025-10,SKU-007,Wool Gloves,218
+2025-11,SKU-007,Wool Gloves,394
+2025-12,SKU-007,Wool Gloves,518
+2025-01,SKU-008,Knit Beanie,142
+2025-02,SKU-008,Knit Beanie,120
+2025-03,SKU-008,Knit Beanie,76
+2025-04,SKU-008,Knit Beanie,44
+2025-05,SKU-008,Knit Beanie,27
+2025-06,SKU-008,Knit Beanie,22
+2025-07,SKU-008,Knit Beanie,22
+2025-08,SKU-008,Knit Beanie,27
+2025-09,SKU-008,Knit Beanie,54
+2025-10,SKU-008,Knit Beanie,98
+2025-11,SKU-008,Knit Beanie,153
+2025-12,SKU-008,Knit Beanie,174
+2025-01,SKU-009,Snow Boots,152
+2025-02,SKU-009,Snow Boots,129
+2025-03,SKU-009,Snow Boots,82
+2025-04,SKU-009,Snow Boots,47
+2025-05,SKU-009,Snow Boots,29
+2025-06,SKU-009,Snow Boots,23
+2025-07,SKU-009,Snow Boots,23
+2025-08,SKU-009,Snow Boots,29
+2025-09,SKU-009,Snow Boots,58
+2025-10,SKU-009,Snow Boots,105
+2025-11,SKU-009,Snow Boots,164
+2025-12,SKU-009,Snow Boots,187
+2025-01,SKU-010,Electric Blanket,110
+2025-02,SKU-010,Electric Blanket,94
+2025-03,SKU-010,Electric Blanket,60
+2025-04,SKU-010,Electric Blanket,34
+2025-05,SKU-010,Electric Blanket,21
+2025-06,SKU-010,Electric Blanket,17
+2025-07,SKU-010,Electric Blanket,17
+2025-08,SKU-010,Electric Blanket,21
+2025-09,SKU-010,Electric Blanket,42
+2025-10,SKU-010,Electric Blanket,76
+2025-11,SKU-010,Electric Blanket,119
+2025-12,SKU-010,Electric Blanket,136
+2025-01,SKU-011,Stainless Bottle,74
+2025-02,SKU-011,Stainless Bottle,73
+2025-03,SKU-011,Stainless Bottle,76
+2025-04,SKU-011,Stainless Bottle,79
+2025-05,SKU-011,Stainless Bottle,74
+2025-06,SKU-011,Stainless Bottle,73
+2025-07,SKU-011,Stainless Bottle,77
+2025-08,SKU-011,Stainless Bottle,75
+2025-09,SKU-011,Stainless Bottle,74
+2025-10,SKU-011,Stainless Bottle,78
+2025-11,SKU-011,Stainless Bottle,76
+2025-12,SKU-011,Stainless Bottle,74
+2025-01,SKU-012,Bluetooth Buds,81
+2025-02,SKU-012,Bluetooth Buds,79
+2025-03,SKU-012,Bluetooth Buds,83
+2025-04,SKU-012,Bluetooth Buds,86
+2025-05,SKU-012,Bluetooth Buds,81
+2025-06,SKU-012,Bluetooth Buds,80
+2025-07,SKU-012,Bluetooth Buds,84
+2025-08,SKU-012,Bluetooth Buds,82
+2025-09,SKU-012,Bluetooth Buds,81
+2025-10,SKU-012,Bluetooth Buds,85
+2025-11,SKU-012,Bluetooth Buds,83
+2025-12,SKU-012,Bluetooth Buds,81
+2025-01,SKU-013,Wired Earbuds,120
+2025-02,SKU-013,Wired Earbuds,112
+2025-03,SKU-013,Wired Earbuds,105
+2025-04,SKU-013,Wired Earbuds,98
+2025-05,SKU-013,Wired Earbuds,90
+2025-06,SKU-013,Wired Earbuds,83
+2025-07,SKU-013,Wired Earbuds,75
+2025-08,SKU-013,Wired Earbuds,68
+2025-09,SKU-013,Wired Earbuds,60
+2025-10,SKU-013,Wired Earbuds,53
+2025-11,SKU-013,Wired Earbuds,46
+2025-12,SKU-013,Wired Earbuds,38
+2025-01,SKU-014,Phone Case,94
+2025-02,SKU-014,Phone Case,91
+2025-03,SKU-014,Phone Case,96
+2025-04,SKU-014,Phone Case,99
+2025-05,SKU-014,Phone Case,94
+2025-06,SKU-014,Phone Case,92
+2025-07,SKU-014,Phone Case,97
+2025-08,SKU-014,Phone Case,95
+2025-09,SKU-014,Phone Case,94
+2025-10,SKU-014,Phone Case,98
+2025-11,SKU-014,Phone Case,96
+2025-12,SKU-014,Phone Case,94
+2025-01,SKU-015,Notebook A5,68
+2025-02,SKU-015,Notebook A5,66
+2025-03,SKU-015,Notebook A5,70
+2025-04,SKU-015,Notebook A5,72
+2025-05,SKU-015,Notebook A5,68
+2025-06,SKU-015,Notebook A5,67
+2025-07,SKU-015,Notebook A5,71
+2025-08,SKU-015,Notebook A5,69
+2025-09,SKU-015,Notebook A5,68
+2025-10,SKU-015,Notebook A5,71
+2025-11,SKU-015,Notebook A5,70
+2025-12,SKU-015,Notebook A5,68

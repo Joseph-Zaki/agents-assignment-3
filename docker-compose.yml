@@ -1,0 +1,55 @@
+services:
+  n8n:
+    # Pinned to the version the workflows are verified against (docs/setup.md).
+    image: docker.n8n.io/n8nio/n8n:2.19.5
+    container_name: n8n
+    restart: unless-stopped
+    ports:
+      - "5678:5678"
+    environment:
+      # Core
+      - GENERIC_TIMEZONE=${GENERIC_TIMEZONE:-America/Los_Angeles}
+      - TZ=${GENERIC_TIMEZONE:-America/Los_Angeles}
+      - N8N_HOST=localhost
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=http
+      - WEBHOOK_URL=http://localhost:5678/
+
+      # Encryption key for stored credentials. MUST stay constant across restarts,
+      # or saved credentials become unreadable.
+      - N8N_ENCRYPTION_KEY=${N8N_ENCRYPTION_KEY}
+
+      # API key for Anthropic nodes and $env references in workflows
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+
+      # Allow {{ $env.X }} in node expressions. Off by default in n8n for
+      # multi-tenant safety; fine to enable on a single-user local dev box.
+      - N8N_BLOCK_ENV_ACCESS_IN_NODE=false
+
+      # n8n 2.x only lets Read/Write File nodes touch ~/.n8n-files by default.
+      # The starter workflow reads the demo CSVs from the /data mount below.
+      - N8N_RESTRICT_FILE_ACCESS_TO=/data
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - ./workflows:/workflows:ro
+      - ./data:/data:ro
+    # Auto-import any JSON files in ./workflows on first boot. A per-file marker
+    # in the named volume makes this idempotent — re-importing requires either
+    # deleting the marker or running `docker compose down -v` to wipe the volume.
+    entrypoint: ["tini", "--", "/bin/sh", "-c"]
+    command:
+      - |
+        if [ -d /workflows ]; then
+          for f in /workflows/*.json; do
+            [ -f "$$f" ] || continue
+            marker="/home/node/.n8n/.imported_$$(basename "$$f")"
+            if [ ! -f "$$marker" ]; then
+              echo "[startup] importing $$f"
+              n8n import:workflow --input="$$f" && touch "$$marker"
+            fi
+          done
+        fi
+        exec n8n
+
+volumes:
+  n8n_data:

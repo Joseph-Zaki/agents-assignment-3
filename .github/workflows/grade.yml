@@ -1,0 +1,54 @@
+name: Autograding
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+
+jobs:
+  grade:
+    runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || vars.GRADING_ENABLED == 'true' }}
+    steps:
+      - name: Checkout student code
+        uses: actions/checkout@v4
+
+      - name: Fetch grader
+        uses: actions/checkout@v4
+        with:
+          repository: Vyoma/agent-course-graders
+          path: .grader
+          token: ${{ secrets.GRADER_PAT }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Run grader
+        id: grade
+        run: |
+          python .grader/assignment3/grader.py --output grade_report.json
+          SCORE=$(python -c "import json; r=json.load(open('grade_report.json')); print(f\"{r['total']}/{r['max_score']}\")")
+          echo "score=$SCORE" >> $GITHUB_OUTPUT
+
+      - name: Upload grade report
+        uses: actions/upload-artifact@v4
+        with:
+          name: grade-report
+          path: grade_report.json
+
+      - name: Post grade summary
+        run: |
+          echo "## Grade Report" >> $GITHUB_STEP_SUMMARY
+          echo "**Score: ${{ steps.grade.outputs.score }}**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          python -c "
+          import json
+          r = json.load(open('grade_report.json'))
+          for s in r['sections']:
+              print(f\"### {s['name']} ({s['score']:.1f}/{s['max_score']:.1f})\")
+              for d in s['details']:
+                  print(f\"- {d}\")
+              print()
+          " >> $GITHUB_STEP_SUMMARY

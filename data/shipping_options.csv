@@ -1,0 +1,11 @@
+option_id,carrier,mode,origin_region,destination_region,transit_days,cost_per_kg,max_weight_kg,supports_perishable
+SHP-001,Maersk,ocean,Asia,North America,32,1.20,28000,false
+SHP-002,COSCO,ocean,Asia,North America,30,1.35,28000,false
+SHP-003,FedEx,air,Asia,North America,4,12.50,1000,false
+SHP-004,DHL,air,Asia,North America,5,11.80,1500,true
+SHP-005,UPS Ground,ground,North America,North America,5,2.40,2200,true
+SHP-006,XPO Logistics,ground,North America,North America,7,1.90,4500,false
+SHP-007,Lufthansa Cargo,air,Europe,North America,3,14.20,1200,true
+SHP-008,Hapag-Lloyd,ocean,Europe,North America,18,1.65,26000,false
+SHP-009,LATAM Cargo,air,South America,North America,6,10.80,900,false
+SHP-010,Hamburg Süd,ocean,South America,North America,22,1.55,24000,false
