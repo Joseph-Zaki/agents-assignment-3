@@ -74,8 +74,8 @@ function annualDemand(salesForSku) {
  *       and dividing by zero holding cost is meaningless.)
  */
 function eoq(D, S, H) {
-  // TODO [medium] — LO-2: classical optimization
-  throw new Error("TODO [medium]: implement eoq()");
+  const q_star = Math.sqrt( (2 * D * S) / H)
+  return q_star
 }
 
 // ---- TODO #2 — assumption-violation detection -----------------------------
@@ -108,9 +108,49 @@ function eoq(D, S, H) {
  * Hint: implement each check as its own small block. A flagged SKU may
  *       trigger multiple flags — that's expected and useful downstream.
  */
+
+
 function detectViolations(inv, salesSeries) {
-  // TODO [hard] — LO-4: knowing when classical models fail
-  throw new Error("TODO [hard]: implement detectViolations()");
+  const VIRAL_MULTIPLIER = 2.5;
+  const DECLINE_RATIO = 0.5;
+  const LOW_VELOCITY_ANNUAL = 500;
+  const LONG_LEAD_DAYS = 28;
+  const VOLATILITY_CV = 0.5;
+
+  const mean = (xs) =>
+  xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : 0;
+
+  const stdev = (xs) => {
+  if (xs.length < 2) return 0;
+  const m = mean(xs);
+  return Math.sqrt(xs.reduce((s, x) => s + (x - m) ** 2, 0) / xs.length);
+};
+  
+  let flags = []
+  const units = salesSeries.map((row) => row.units_sold)
+  // viral_spike check
+  const last_3_months = units.slice(-3)
+  const mean_3_mos = last_3_months.reduce((sum, n) => sum + n, 0) / last_3_months.length
+
+  const last_9_months = units.slice(-12, -3)
+  const mean_9_mos = last_9_months.reduce((sum, n) => sum + n, 0) / last_9_months.length
+
+  if (mean_3_mos > VIRAL_MULTIPLIER * mean_9_mos) flags.push("viral_spike")
+
+  // declining check
+  const first_3_months = units.slice(0, 3)
+  const mean_first_3_mos = first_3_months.reduce((sum, n) => sum + n, 0) / first_3_months.length
+  if (mean_3_mos < DECLINE_RATIO * mean_first_3_mos) flags.push("declining")
+
+  // low_velocity check
+  if (annualDemand(salesSeries) < LOW_VELOCITY_ANNUAL) flags.push("low_velocity")
+
+  // long_lead_time check
+  const m = mean(units)
+  const cv = m > 0 ? stdev(units) / m : 0
+  if (inv.lead_time_days > LONG_LEAD_DAYS && cv > VOLATILITY_CV) flags.push("long_lead_time")
+
+  return flags;
 }
 
 // ---- Main loop (provided) -------------------------------------------------

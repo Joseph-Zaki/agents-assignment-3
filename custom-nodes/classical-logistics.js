@@ -65,8 +65,26 @@ const options  = $('Read Shipping JSON').all().map(i => ({ type: "option", ...i.
  * the LLM branch, not because we couldn't afford the optimal search.
  */
 function pickCheapestFeasible(req, options) {
-  // TODO [hard] — LO-2: classical search baselines
-  throw new Error("TODO [hard]: implement pickCheapestFeasible()");
+  const viable_options = options
+    .filter(opt => opt.origin_region == req.origin_region)
+    .filter(opt => opt.dest_region == req.dest_region)
+    .filter(opt => opt.transit_days <= req.deadline_days)
+    .filter(opt => opt.max_weight_kg >= req.weight_kg)
+    .filter(opt => req.perishable ? opt.supports_perishable : true)
+
+  if (viable_options.length === 0) return null;
+
+  const cheapestOption = viable_options
+  .map(option => ({
+    ...option,
+    total_cost_usd: req.weight_kg * option.cost_per_kg
+  }))
+  .reduce((min, option) =>
+    option.total_cost_usd < min.total_cost_usd ? option : min
+  );
+
+  return cheapestOption;
+  
 }
 
 // ---- Main loop (provided) -------------------------------------------------
